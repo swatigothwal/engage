@@ -27,21 +27,10 @@ function Room() {
       new Peer({
         config: {
           iceServers: [
-            { urls: [process.env.REACT_APP_ICE_URL] },
-            {
-              username: process.env.REACT_APP_ICE_USER,
-              credential: process.env.REACT_APP_ICE_CREDENTIALS,
-              urls: [
-                "turn:ss-turn1.xirsys.com:80?transport=udp",
-                "turn:ss-turn1.xirsys.com:3478?transport=udp",
-                "turn:ss-turn1.xirsys.com:80?transport=tcp",
-                "turn:ss-turn1.xirsys.com:3478?transport=tcp",
-                "turns:ss-turn1.xirsys.com:443?transport=tcp",
-                "turns:ss-turn1.xirsys.com:5349?transport=tcp",
-              ],
-            },
+            { urls: 'stun:stun2.1.google.com:19302'}
           ],
-        },
+        },  
+        trickle: false,
       })
   );
 

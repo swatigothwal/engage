@@ -1,18 +1,40 @@
 import { useParams } from "react-router";
-import { Redirect } from "react-router-dom";
+import { Redirect ,useHistory} from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import Peer from "peerjs";
 import Message from "components/Message";
+import ToggleFullScreen from "./fullScreen";
+import 'antd/dist/antd.css'
+import { message as copied} from 'antd'
+import {IconButton, Badge, Input, Button} from '@material-ui/core'
+import VideocamIcon from '@material-ui/icons/Videocam'
+import VideocamOffIcon from '@material-ui/icons/VideocamOff'
+import MicIcon from '@material-ui/icons/Mic'
+import MicOffIcon from '@material-ui/icons/MicOff'
+import ScreenShareIcon from '@material-ui/icons/ScreenShare'
+import StopScreenShareIcon from '@material-ui/icons/StopScreenShare'
+import ChatIcon from '@material-ui/icons/Chat'
+import CallEndIcon from '@material-ui/icons/CallEnd';
+import FullscreenIcon from '@material-ui/icons/Fullscreen';
+import FullscreenExitIcon from '@material-ui/icons/FullscreenExit';
+import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
+import 'bootstrap/dist/css/bootstrap.css'
 
-const END_POINT = process.env.REACT_APP_HOST_URL;
+
+const END_POINT = "http://localhost:5000/";
+
 
 function Room() {
+  
+  const [isMsg,setIsMsg] = useState(false);
+  const [isFullScreen,setIsFullScreen] = useState(false);
   const loadingStatus = useSelector((state) => state.auth.loading);
   const authStatus = useSelector((state) => state.auth.isAuthenticated);
   const [room] = useState(useParams().id);
   const user = useSelector((state) => state.auth.user);
+  const history = useHistory();
 
   const [socket] = useState(() =>
     io(END_POINT, {
@@ -135,17 +157,113 @@ function Room() {
     }
   }
 
+  const copyUrl = () => {
+		let text = window.location.href
+		if (!navigator.clipboard) {
+			let textArea = document.createElement("textarea")
+			textArea.value = text
+			document.body.appendChild(textArea)
+			textArea.focus()
+			textArea.select()
+			try {
+				document.execCommand('copy')
+			  copied.success("Link copied to clipboard!")
+			} catch (err) {
+      	copied.error("Failed to copy")
+			}
+			document.body.removeChild(textArea)
+			return
+		}
+		navigator.clipboard.writeText(text).then(function () {
+			copied.success("Link copied to clipboard!")
+		}, () => {
+      copied.error("Failed to copy")
+		})
+	};
+
+  const handleExitFullScreenClick =()=> {
+    document.webkitExitFullscreen();
+  }
+
+const getToggleFullScreen = ()=>{
+     if(!isFullScreen){
+        ToggleFullScreen();
+        setIsFullScreen(true)
+      }else{
+      handleExitFullScreenClick();
+      setIsFullScreen(false);
+    }
+}
+
+const showChat = ()=>{
+  if(isMsg){
+    setIsMsg(false);
+  }else{
+    setIsMsg(true);
+  }
+}
+
+
+const disconnectCall = () => {
+  peer.destroy();
+  history.push("/login");
+ window.location.reload();
+};
+
   return (
     <div className="w-full h-full flex">
       <div
-        className="w-full sm:w-3/4 h-full no-scrollbar grid grid-cols-2 gap-2 overflow-y-scroll bg-black bg-opacity-90 p-2"
+        className="w-full  h-full no-scrollbar grid grid-cols-2 gap-2 overflow-y-scroll bg-black bg-opacity-90 p-2"
         id="videoContainer"
-      ></div>
-      <div className="w-1/4 hidden sm:block h-full border-l border-gray-300">
-        <Message room={room} socket={socket} />
-      </div>
+      ></div>              
+      
+      {
+        isMsg===true?
+       <div className="w-1/4 hidden sm:block h-full border-l border-gray-300">
+       <Message room={room} socket={socket} />
+       </div>:
+       <></>
+      }
+
+      <div className="btn-down" style={{ backgroundColor: "whitesmoke", color: "whitesmoke", textAlign: "center" }}>
+							<IconButton style={{ color: "#424242" }}>
+								<VideocamIcon /> 
+                 <VideocamOffIcon />
+							</IconButton>
+
+							<IconButton style={{ color: "#f44336" }} onClick={()=>disconnectCall()} >
+								<CallEndIcon />
+							</IconButton>
+
+							<IconButton style={{ color: "#424242" }} >
+							 <MicIcon /> 
+                <MicOffIcon />
+							</IconButton>
+              
+								<IconButton style={{ color: "#424242" }} >
+									<ScreenShareIcon /> 
+                   <StopScreenShareIcon />
+								</IconButton>
+
+								<IconButton style={{ color: "#424242" }} onClick={()=>getToggleFullScreen()}>
+									{
+                    isFullScreen!==true?
+                    <FullscreenIcon />
+                  :<FullscreenExitIcon/>
+                  }
+								</IconButton>
+                     
+                <IconButton style={{ color: "#424242" }} onClick={()=>showChat()}>
+									<ChatIcon/>
+								</IconButton>
+                   
+                <IconButton style={{ color: "#424242" ,marginLeft: '0.8rem' }} onClick={()=>copyUrl()}>
+              <FileCopyOutlinedIcon/>
+							</IconButton>
+  
+          	</div>
     </div>
-  );
+    );
 }
 
 export default Room;

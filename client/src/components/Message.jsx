@@ -1,12 +1,30 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+//import axios from "axios"
+import api from "api";
 
 function Message({ room, socket }) {
   let [messages, setMessages] = useState([]);
   let [message, setMessage] = useState("");
   const user = useSelector((state) => state.auth.user);
+  const [flag,setFlag] = useState(false);
 
-  useEffect(() => {
+  useEffect(async () => {
+    if(!flag){
+         setFlag(true);
+         const response = await api.post("/findAllMsgs", { room} );
+         if(response?.data?.msgs != null){
+
+            response.data.msgs.forEach(item=>{
+              var obj = {name: item.Sender ,msg: item.Message}
+              setMessages([...messages,obj]);
+             console.log(obj);
+            })
+
+         } 
+         console.log(messages)
+        }
     if (socket) {
       socket.on("message", (message) => {
         setMessages([...messages, message]);
@@ -75,7 +93,7 @@ function Message({ room, socket }) {
         </div>
       </div>
 
-      <div className="fixed bottom-0 w-1/4 bg-white">
+      <div style={{marginBottom:"10vh"}} className="fixed bottom-0 w-1/4 bg-white">
         <form
           className="h-16 w-full flex border-t py-2 items-center justify-between"
           onSubmit={handleSendMessage}

@@ -23,7 +23,7 @@ import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 import 'bootstrap/dist/css/bootstrap.css'
 
 
-const END_POINT = "http://localhost:5000/";
+const END_POINT = process.env.REACT_APP_HOST_URL;
 
 
 function Room() {
@@ -35,6 +35,10 @@ function Room() {
   const [room] = useState(useParams().id);
   const user = useSelector((state) => state.auth.user);
   const history = useHistory();
+  const [isVideoVisible, setVideoVisible] = useState(true);
+  const [isAudioVisible, setAudioVisible] = useState(true);
+  const [isScreenShare, setScreenVisible] = useState(false);
+  const [streamObj, setStreamObj] = useState();
 
   const [socket] = useState(() =>
     io(END_POINT, {
@@ -57,6 +61,7 @@ function Room() {
   );
 
   useEffect(() => {
+    
     peer?.on("open", (id) => {
       setPeerId(id);
       socket.emit("joinRoom", { name: user?.name, room, peerID: id });
@@ -65,8 +70,9 @@ function Room() {
         let videos = document.getElementById("videoContainer");
         if (videos) videos.innerHTML = "";
         navigator.mediaDevices
-          .getUserMedia({ video: true, audio: true })
+          .getUserMedia({ video: isVideoVisible, audio: isAudioVisible })
           .then((stream) => {
+            setStreamObj(stream);
             playStream(id, stream, true);
             userPeers.forEach((member) => {
               if (member !== id) {
@@ -77,13 +83,30 @@ function Room() {
               }
             });
             updateStream(userPeers);
+            peer.on("call", (call) => {
+              if (videos) videos.innerHTML = "";
+              navigator.mediaDevices
+                .getUserMedia({ video: isVideoVisible, audio: isAudioVisible })
+                .then((stream) => {
+                  call.answer(stream);
+                  playStream(id, stream, true);
+                  userPeers.forEach((member) => {
+                    if (member !== id) {
+                      call?.on("stream", (remoteStream) => {
+                        playStream(member, remoteStream);
+                      });
+                    }
+                  });
+                  updateStream(userPeers);
+                });
+            });
           });
 
         // Answer
         peer.on("call", (call) => {
           if (videos) videos.innerHTML = "";
           navigator.mediaDevices
-            .getUserMedia({ video: true, audio: true })
+            .getUserMedia({ video: isVideoVisible, audio: isAudioVisible })
             .then((stream) => {
               call.answer(stream);
               playStream(id, stream, true);
@@ -101,7 +124,7 @@ function Room() {
         setMembers(userPeers);
       });
     });
-  }, [socket, room, user, peer, members]);
+  }, [socket, room, user, peer, members, isVideoVisible, isAudioVisible, isScreenShare]);
 
   useEffect(() => {
     return () => {
@@ -159,6 +182,8 @@ function Room() {
 
   const copyUrl = () => {
 		let text = window.location.href
+    text = text.split('/');
+    text = text[4];
 		if (!navigator.clipboard) {
 			let textArea = document.createElement("textarea")
 			textArea.value = text
@@ -195,6 +220,25 @@ const getToggleFullScreen = ()=>{
     }
 }
 
+const toggleVideo = ()=>{
+  
+  streamObj.getVideoTracks()[0].enabled = !streamObj.getVideoTracks()[0].enabled;
+  setStreamObj(streamObj);
+  setVideoVisible(!isVideoVisible);
+
+}
+const toggleAudio = ()=>{
+  setAudioVisible(!isAudioVisible);
+}
+
+const toggleScreenShare = async ()=>{
+  const stream = await navigator.mediaDevices.getDisplayMedia();
+  streamObj.getVideoTracks()[0] = stream.getTracks()[0];
+  
+  setStreamObj(streamObj);
+  setScreenVisible(!isScreenShare);
+}
+
 const showChat = ()=>{
   if(isMsg){
     setIsMsg(false);
@@ -226,23 +270,24 @@ const disconnectCall = () => {
       }
 
       <div className="btn-down" style={{ backgroundColor: "whitesmoke", color: "whitesmoke", textAlign: "center" }}>
-							<IconButton style={{ color: "#424242" }}>
-								<VideocamIcon /> 
-                 <VideocamOffIcon />
+							<IconButton style={{ color: "#424242" }} onClick={()=>toggleVideo()}>
+						{ !isVideoVisible ? 	<VideocamIcon /> 
+                : <VideocamOffIcon /> }
 							</IconButton>
 
 							<IconButton style={{ color: "#f44336" }} onClick={()=>disconnectCall()} >
 								<CallEndIcon />
 							</IconButton>
 
-							<IconButton style={{ color: "#424242" }} >
-							 <MicIcon /> 
-                <MicOffIcon />
+							<IconButton style={{ color: "#424242" }} onClick ={()=>toggleAudio()} >
+					    {!isAudioVisible	?	 <MicIcon /> :
+                <MicOffIcon /> }
 							</IconButton>
               
-								<IconButton style={{ color: "#424242" }} >
-									<ScreenShareIcon /> 
-                   <StopScreenShareIcon />
+								<IconButton style={{ color: "#424242" }} onClick={()=>toggleScreenShare()}>
+								
+                {!isScreenShare ?	<ScreenShareIcon /> :
+                   <StopScreenShareIcon /> }
 								</IconButton>
 
 								<IconButton style={{ color: "#424242" }} onClick={()=>getToggleFullScreen()}>

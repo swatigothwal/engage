@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+const { ObjectId } = require("mongodb");
 
 const UserSchema = new Schema({
   name: {
@@ -13,7 +14,13 @@ const UserSchema = new Schema({
   password: {
     type: String,
     required: true
-  }
+  },
+  group: [
+    {
+      type:ObjectId,
+      ref: 'Room'
+    }
+  ]
 })
 
 module.exports = mongoose.model('user', UserSchema)

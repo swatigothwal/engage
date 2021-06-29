@@ -9,6 +9,8 @@ const bcrypt = require("bcrypt");
 const User = require("./models/user");
 const { userJoin, userLeave, getUser, users } = require("./utils/users");
 const user = require("./models/user");
+const roomModal = require("./models/room");
+
 const path = require("path");
 
 app.use(express.static("public"));
@@ -39,6 +41,12 @@ app.get("/auth", function (req, res) {
   }
 
   res.json({ message: "Failed Auth" });
+});
+
+app.post("/findAllMsgs",async function (req,res){
+      const response =  await roomModal.findOne({ID: req.body.room});
+        console.log(response);
+        return res.status(200).json({msgs : response.text});
 });
 
 app.post("/login", async function (req, res) {
@@ -94,7 +102,7 @@ io.on("connection", (socket) => {
     socket.peerID = peerID;
 
     // Wellcome room
-    socket.emit("message", { name: "Admin", msg: "Wellcome to chat app" });
+    socket.emit("message", { name: "Admin", msg: "Continue Chat..." });
 
     let allMembersInRoom = users
       .filter((user) => user.room === room)
@@ -108,11 +116,38 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("sendMessage", ({ name, msg, room }) => {
+  socket.on("sendMessage",async ({ name, msg, room }) =>  {
     io.to(room).emit("message", {
       name,
       msg,
     });
+    console.log(room);
+    await roomModal.findOne({ ID: room })
+            .then((doc) => {
+                if (doc) {
+                    doc.text.push({
+                        Sender: name,
+                        Time: Date.now(),
+                        Message: msg
+                    })
+                    doc.save('done');
+                }
+                else {
+                    const newDoc = new roomModal({
+                        ID: room,
+                        text: [{
+                            Sender: name,
+                            Time: Date.now(),
+                            Message: msg
+                        }]
+                    })
+                    newDoc.save((err, res) => {
+                        if (err) {
+                            res.send('err');
+                        }
+                    })
+                }
+            })
   });
 
   socket.on("disconnect", () => {

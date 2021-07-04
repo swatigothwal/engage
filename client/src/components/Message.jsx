@@ -21,7 +21,6 @@ function Message({ room, socket }) {
               setMessages([...messages,obj]);
              console.log(obj);
             })
-
          } 
          console.log(messages)
         }

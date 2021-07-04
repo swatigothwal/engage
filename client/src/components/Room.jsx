@@ -23,7 +23,7 @@ import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 import 'bootstrap/dist/css/bootstrap.css'
 
 
-const END_POINT = process.env.REACT_APP_HOST_URL;
+const END_POINT = "http://localhost:5000";
 
 
 function Room() {

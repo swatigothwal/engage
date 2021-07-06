@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link ,useHistory} from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import api from "api";
@@ -8,10 +8,16 @@ function Join() {
   let [id, setId] = useState();
   let [rooms,setRooms] = useState([]);
   const user = useSelector((state) => state.auth.user);
+  const history = useHistory();
 
   function handleChange(e) {
     e.preventDefault();
     setId(e.target.value);
+  }
+  
+  const goToRoom = (item)=>{
+        history.push(`/rooms/${item}`)
+  
   }
 
   useEffect(()=>{
@@ -53,7 +59,7 @@ function Join() {
         helllllo
         <div>
         { rooms.map(item => 
-           <li>{item}</li> )}
+           <li onClick={()=>goToRoom(item)}>{item}</li> )}
         </div>
       </div>
     </div>

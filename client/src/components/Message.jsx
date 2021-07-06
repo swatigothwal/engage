@@ -19,19 +19,17 @@ function Message({ room, socket }) {
             response.data.msgs.forEach(item=>{
               var obj = {name: item.Sender ,msg: item.Message}
               setMessages([...messages,obj]);
-             console.log(obj);
             })
          } 
-         console.log(messages)
         }
-    if (socket) {
-      socket.on("message", (message) => {
-        setMessages([...messages, message]);
-        console.log("hey!")
+      if (socket) {
+        socket.on("message", (message) => {
+          console.log("kash")
+          setMessages([...messages, message]);
         let element = document.getElementById("messages");
         element.scrollTop = element.scrollHeight;
       });
-    }
+     }
     return () => {
       socket?.off("message");
     };
@@ -51,6 +49,7 @@ function Message({ room, socket }) {
   }
 
   function renderMessage(item, index) {
+    console.log(item.msg)
     if (item.name !== "Admin")
       return (
         <div

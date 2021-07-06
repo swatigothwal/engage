@@ -79,45 +79,53 @@ function Room() {
  const [isScreenShare, setScreenVisible] = useState(false);
  const [streamObj, setStreamObj] = useState(); 
 
-  useEffect(() => {
-    
+  useEffect(() => { 
+    const helperGetUserMedia = async ()=>{
+     try{
+      const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoVisible, audio: isAudioVisible})
+
+        userVideo.current.srcObject = stream;
+         socketRef.current.emit("join room", {name:user.name, roomID:roomID});
+         
+         socketRef.current.on("all users", users => {
+             console.log(users);
+             const peers = [];
+             users.forEach(item => {
+                 const peer = createPeer(item.id, socketRef.current.id, stream);
+                 peersRef.current.push({
+                     peerID: item.id,
+                     peer,
+                 })
+                 peers.push(peer);
+             })
+             setPeers(peers);
+         })
+          
+         socketRef.current.on("user joined", payload => {
+             const peer = addPeer(payload.signal, payload.callerID, stream);
+             peersRef.current.push({
+                 peerID: payload.callerID,
+                 peer,
+             })
+
+             setPeers(users => [...users, peer]);
+          });
+
+          socketRef.current.on("receiving returned signal", payload => {
+             const item = peersRef.current.find(p => p.peerID === payload.id);
+             item.peer.signal(payload.signal);
+          });
+        }
+        catch{
+          console.log("error in geUserMedia");
+        }
+     }
+
     socketRef.current = io.connect("http://localhost:5000",
             {transports: ["websocket"],
             upgrade: false});
         console.log("dmkfd");
-        navigator.mediaDevices.getUserMedia({ video: isVideoVisible, audio: isAudioVisible}).then(stream => {
-           userVideo.current.srcObject = stream;
-            socketRef.current.emit("join room", {name:user.name, roomID:roomID});
-            
-            socketRef.current.on("all users", users => {
-                console.log(users);
-                const peers = [];
-                users.forEach(item => {
-                    const peer = createPeer(item.id, socketRef.current.id, stream);
-                    peersRef.current.push({
-                        peerID: item.id,
-                        peer,
-                    })
-                    peers.push(peer);
-                })
-                setPeers(peers);
-            })
-
-            socketRef.current.on("user joined", payload => {
-                const peer = addPeer(payload.signal, payload.callerID, stream);
-                peersRef.current.push({
-                    peerID: payload.callerID,
-                    peer,
-                })
-
-                setPeers(users => [...users, peer]);
-            });
-
-            socketRef.current.on("receiving returned signal", payload => {
-                const item = peersRef.current.find(p => p.peerID === payload.id);
-                item.peer.signal(payload.signal);
-            });
-        })
+          helperGetUserMedia();
     },[]);
 
 

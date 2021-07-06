@@ -65,7 +65,6 @@ app.post("/findAllMsgs", async function (req, res) {
   const response = await roomModal.findOne({
     ID: req.body.room
   });
-  console.log(response);
   return res.status(200).json({
     msgs: response?.text
   });
@@ -76,7 +75,6 @@ app.post("/findUserRooms", async function (req, res) {
   const response = await userModal.findOne({
     email : req.body.email
   });
-  console.log(response)
   return res.status(200).json(
     response.group
   );
@@ -163,12 +161,14 @@ if (process.env.NODE_ENV === "production") {
 const port = process.env.PORT || 5000;
 
 io.on('connection', (socket) => {
-  console.log("djefbkj i am in connection");
+
+  var userForExitName ;
   socket.on("join room", (item) => {
-    console.log(item);
+
     const {name, roomID} = item;
+    userForExitName = item.name;
     if (liveUsers[roomID]) {
-      console.log(liveUsers);
+    
       const length = liveUsers[roomID].length;
       if (length === 4) {
         socket.emit("room full");
@@ -226,14 +226,17 @@ io.on('connection', (socket) => {
     if (room) {
       room = room.filter(item => item.id !== socket.id);
       liveUsers[roomID] = room;
-      socket.broadcast.to(roomID).emit("message", {
+      var temp;
+      if(userForExitName=="") temp="Someone has left the room"
+      else temp= `${userForExitName} has left the room` 
+      socket.to(roomID).broadcast.emit("message", {
         name: "Admin",
-        msg: `${user.name} has left to room`,
+         msg : temp
       });
     }
 
   });
-  socket.emit("message", { name: "Admin", msg: "Wellcome to chat app" });
+  socket.emit("message", { name: "Admin", msg: "Welcome to chat app" });
 
   socket.on("sendMessage", ({
     name,
@@ -248,8 +251,7 @@ io.on('connection', (socket) => {
     roomModal.findOne({ ID: room[0] })
             .then((doc) => {
                 if (doc) {
-                   console.log("done")
-                 // console.log(msg)
+
                     doc.text.push({
                         Sender: name,
                         Time: Date.now(),
@@ -258,8 +260,8 @@ io.on('connection', (socket) => {
                     doc.save('done');
                 }
                 else {
-                  console.log("new")
-                    const newDoc = new roomModal({
+                  
+                  const newDoc = new roomModal({
                         ID: room[0],
                         text: [{
                             Sender: name,

@@ -53,7 +53,6 @@ const Video = (props) => {
     );
 }
 
-
 const videoConstraints = {
     height: window.innerHeight / 2,
     width: window.innerWidth / 2
@@ -83,12 +82,12 @@ function Room() {
     const helperGetUserMedia = async ()=>{
      try{
       const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoVisible, audio: isAudioVisible})
-
+  
+        if(!stream) console.log("ddddd")
         userVideo.current.srcObject = stream;
          socketRef.current.emit("join room", {name:user.name, roomID:roomID});
          
          socketRef.current.on("all users", users => {
-             console.log(users);
              const peers = [];
              users.forEach(item => {
                  const peer = createPeer(item.id, socketRef.current.id, stream);

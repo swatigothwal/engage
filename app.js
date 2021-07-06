@@ -186,7 +186,8 @@ io.on('connection', (socket) => {
     }
     
    //..user.findone(email)
-    socketToRoom[socket.id] = roomID;
+
+   socketToRoom[socket.id] = roomID;
 
 
     const usersInThisRoom = liveUsers[roomID].filter(item => item.id !== socket.id);

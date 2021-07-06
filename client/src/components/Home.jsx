@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { authLogout } from "redux/slices/auth";
 
 function Home() {
+  
   let [id, setId] = useState();
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();

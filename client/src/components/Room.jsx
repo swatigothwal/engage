@@ -1,9 +1,10 @@
+import React, { useEffect, useRef, useState } from "react";
+import io from "socket.io-client";
+import Peer from "simple-peer";
+import styled from "styled-components";
 import { useParams } from "react-router";
 import { Redirect ,useHistory} from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useEffect, useState } from "react";
-import io from "socket.io-client";
-import Peer from "peerjs";
 import Message from "components/Message";
 import ToggleFullScreen from "./fullScreen";
 import 'antd/dist/antd.css'
@@ -22,163 +23,137 @@ import FullscreenExitIcon from '@material-ui/icons/FullscreenExit';
 import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 import 'bootstrap/dist/css/bootstrap.css'
 
-
 const END_POINT = "http://localhost:5000";
+
+const Container = styled.div`
+    padding: 20px;
+    display: flex;
+    height: 100vh;
+    width: 90%;
+    margin: auto;
+    flex-wrap: wrap;
+`;
+
+const StyledVideo = styled.video`
+    height: 40%;
+    width: 40%;
+`;
+
+const Video = (props) => {
+    const ref = useRef();
+
+    useEffect(() => {
+        props.peer.on("stream", stream => {
+            ref.current.srcObject = stream;
+        })
+    }, []);
+
+    return (
+        <StyledVideo playsInline autoPlay ref={ref} />
+    );
+}
+
+
+const videoConstraints = {
+    height: window.innerHeight / 2,
+    width: window.innerWidth / 2
+};
 
 
 function Room() {
   
-  const [isMsg,setIsMsg] = useState(false);
-  const [isFullScreen,setIsFullScreen] = useState(false);
-  const loadingStatus = useSelector((state) => state.auth.loading);
-  const authStatus = useSelector((state) => state.auth.isAuthenticated);
-  const [room] = useState(useParams().id);
-  const user = useSelector((state) => state.auth.user);
-  const history = useHistory();
-  const [isVideoVisible, setVideoVisible] = useState(true);
-  const [isAudioVisible, setAudioVisible] = useState(true);
-  const [isScreenShare, setScreenVisible] = useState(false);
-  const [streamObj, setStreamObj] = useState();
-
-  const [socket] = useState(() =>
-    io(END_POINT, {
-      transports: ["websocket"],
-      upgrade: false,
-    })
-  );
-  const [peerId, setPeerId] = useState();
-  const [members, setMembers] = useState([]);
-  const [peer] = useState(
-    () =>
-      new Peer({
-        config: {
-          iceServers: [
-            { urls: 'stun:stun2.1.google.com:19302'}
-          ],
-        },  
-        trickle: false,
-      })
-  );
+ const [peers, setPeers] = useState([]);
+ const socketRef = useRef();
+ const userVideo = useRef();
+ const userScreen = useRef();
+ const peersRef = useRef([]);
+ const roomID = useState(useParams().id);
+ const [isMsg,setIsMsg] = useState(false);
+ const [isFullScreen,setIsFullScreen] = useState(false);
+ const loadingStatus = useSelector((state) => state.auth.loading);
+ const authStatus = useSelector((state) => state.auth.isAuthenticated);
+ const user = useSelector((state) => state.auth.user);
+ const history = useHistory();
+ const [isVideoVisible, setVideoVisible] = useState(true);
+ const [isAudioVisible, setAudioVisible] = useState(true);
+ const [isScreenShare, setScreenVisible] = useState(false);
+ const [streamObj, setStreamObj] = useState(); 
 
   useEffect(() => {
     
-    peer?.on("open", (id) => {
-      setPeerId(id);
-      socket.emit("joinRoom", { name: user?.name, room, peerID: id });
+    socketRef.current = io.connect("http://localhost:5000",
+            {transports: ["websocket"],
+            upgrade: false});
+        console.log("dmkfd");
+        navigator.mediaDevices.getUserMedia({ video: isVideoVisible, audio: isAudioVisible}).then(stream => {
+           userVideo.current.srcObject = stream;
+            socketRef.current.emit("join room", {name:user.name, roomID:roomID});
+            
+            socketRef.current.on("all users", users => {
+                console.log(users);
+                const peers = [];
+                users.forEach(item => {
+                    const peer = createPeer(item.id, socketRef.current.id, stream);
+                    peersRef.current.push({
+                        peerID: item.id,
+                        peer,
+                    })
+                    peers.push(peer);
+                })
+                setPeers(peers);
+            })
 
-      socket.on("allMembers", (userPeers) => {
-        let videos = document.getElementById("videoContainer");
-        if (videos) videos.innerHTML = "";
-        navigator.mediaDevices
-          .getUserMedia({ video: isVideoVisible, audio: isAudioVisible })
-          .then((stream) => {
-            setStreamObj(stream);
-            playStream(id, stream, true);
-            userPeers.forEach((member) => {
-              if (member !== id) {
-                let call = peer.call(member, stream);
-                call?.on("stream", (remoteStream) => {
-                  playStream(member, remoteStream);
-                });
-              }
-            });
-            updateStream(userPeers);
-            peer.on("call", (call) => {
-              if (videos) videos.innerHTML = "";
-              navigator.mediaDevices
-                .getUserMedia({ video: isVideoVisible, audio: isAudioVisible })
-                .then((stream) => {
-                  call.answer(stream);
-                  playStream(id, stream, true);
-                  userPeers.forEach((member) => {
-                    if (member !== id) {
-                      call?.on("stream", (remoteStream) => {
-                        playStream(member, remoteStream);
-                      });
-                    }
-                  });
-                  updateStream(userPeers);
-                });
-            });
-          });
+            socketRef.current.on("user joined", payload => {
+                const peer = addPeer(payload.signal, payload.callerID, stream);
+                peersRef.current.push({
+                    peerID: payload.callerID,
+                    peer,
+                })
 
-        // Answer
-        peer.on("call", (call) => {
-          if (videos) videos.innerHTML = "";
-          navigator.mediaDevices
-            .getUserMedia({ video: isVideoVisible, audio: isAudioVisible })
-            .then((stream) => {
-              call.answer(stream);
-              playStream(id, stream, true);
-              userPeers.forEach((member) => {
-                if (member !== id) {
-                  call?.on("stream", (remoteStream) => {
-                    playStream(member, remoteStream);
-                  });
-                }
-              });
-              updateStream(userPeers);
+                setPeers(users => [...users, peer]);
             });
+
+            socketRef.current.on("receiving returned signal", payload => {
+                const item = peersRef.current.find(p => p.peerID === payload.id);
+                item.peer.signal(payload.signal);
+            });
+        })
+    },[]);
+
+
+    if (!authStatus && !loadingStatus) {
+        return <Redirect to="/login" />;
+    }
+
+    function createPeer(userToSignal, callerID, stream) {
+        const peer = new Peer({
+            initiator: true,
+            trickle: false,
+            stream,
         });
 
-        setMembers(userPeers);
-      });
-    });
-  }, [socket, room, user, peer, members, isVideoVisible, isAudioVisible, isScreenShare]);
+        peer.on("signal", signal => {
+            socketRef.current.emit("sending signal", { userToSignal, callerID, signal })
+        })
 
-  useEffect(() => {
-    return () => {
-      socket?.emit("peerClose", { peerId });
-    };
-  }, [socket, peerId]);
-
-  useEffect(() => {
-    updateStream(members);
-  }, [members]);
-
-  if (!authStatus && !loadingStatus) {
-    return <Redirect to="/login" />;
-  }
-
-  function updateStream(userPeers) {
-    let videos = document.getElementById("videoContainer");
-    let arr = [];
-    for (let i = 0; i < videos.childNodes.length; i++) {
-      if (!userPeers.includes(videos.childNodes[i].id)) {
-        arr.push(videos.childNodes[i]);
-      }
-      console.log(arr);
+        return peer;
     }
 
-    arr.forEach((video) => {
-      videos.removeChild(video);
-    });
-  }
+    function addPeer(incomingSignal, callerID, stream) {
+        const peer = new Peer({
+            initiator: false,
+            trickle: false,
+            stream,
+        })
 
-  function playStream(id, stream, isLocal = false) {
-    if (!document.getElementById(id)) {
-      let video = document.createElement("video");
-      let div = document.createElement("div");
-      let videos = document.getElementById("videoContainer");
+        peer.on("signal", signal => {
+            socketRef.current.emit("returning signal", { signal, callerID })
+        })
 
-      div.className = "max-w-full min-w-min flex justify-center items-center";
-      video.srcObject = stream;
-      if (isLocal) {
-        video.muted = "muted";
-      }
-      div.id = id;
-      var playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then((_) => {})
-          .catch((error) => {
-            console.log(error);
-          });
-      }
-      div.appendChild(video);
-      if (videos) videos.appendChild(div);
+        peer.signal(incomingSignal);
+
+        return peer;
     }
-  }
 
   const copyUrl = () => {
 		let text = window.location.href
@@ -221,21 +196,30 @@ const getToggleFullScreen = ()=>{
 }
 
 const toggleVideo = ()=>{
-  
-  streamObj.getVideoTracks()[0].enabled = !streamObj.getVideoTracks()[0].enabled;
-  setStreamObj(streamObj);
-  setVideoVisible(!isVideoVisible);
-
+  if(isScreenShare){
+    alert("please stop sharing your screen to get video");
+  }
+  else{
+    userVideo.current.srcObject.getVideoTracks()[0].enabled = !isVideoVisible;
+    setVideoVisible(!isVideoVisible);
+  }
 }
 const toggleAudio = ()=>{
+
+  userVideo.current.srcObject.getAudioTracks()[0].enabled = !isAudioVisible;
   setAudioVisible(!isAudioVisible);
 }
 
 const toggleScreenShare = async ()=>{
-  const stream = await navigator.mediaDevices.getDisplayMedia();
-  streamObj.getVideoTracks()[0] = stream.getTracks()[0];
+  if(isScreenShare){
+    const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoVisible, audio: isAudioVisible });
+    userVideo.current.srcObject = stream;
+  }
+  else{
+    const stream = await navigator.mediaDevices.getDisplayMedia();
+    userVideo.current.srcObject = stream;
+  }
   
-  setStreamObj(streamObj);
   setScreenVisible(!isScreenShare);
 }
 
@@ -249,22 +233,25 @@ const showChat = ()=>{
 
 
 const disconnectCall = () => {
-  peer.destroy();
   history.push("/login");
- window.location.reload();
+    window.location.reload();
 };
 
   return (
     <div className="w-full h-full flex">
-      <div
-        className="w-full  h-full no-scrollbar grid grid-cols-2 gap-2 overflow-y-scroll bg-black bg-opacity-90 p-2"
-        id="videoContainer"
-      ></div>              
+      <Container>
+            <StyledVideo muted ref={userVideo} autoPlay playsInline />
+            {peers.map((peer, index) => {
+                return (
+                    <Video key={index} peer={peer} />
+                );
+            })}
+        </Container>
       
       {
         isMsg===true?
        <div className="w-1/4 hidden sm:block h-full border-l border-gray-300">
-       <Message room={room} socket={socket} />
+       <Message room={roomID} socket={socketRef.current} />
        </div>:
        <></>
       }

@@ -27,11 +27,11 @@ function Message({ room, socket }) {
     if (socket) {
       socket.on("message", (message) => {
         setMessages([...messages, message]);
+        console.log("hey!")
         let element = document.getElementById("messages");
         element.scrollTop = element.scrollHeight;
       });
     }
-
     return () => {
       socket?.off("message");
     };

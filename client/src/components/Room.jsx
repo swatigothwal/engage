@@ -24,7 +24,6 @@ import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 import 'bootstrap/dist/css/bootstrap.css'
 
 const END_POINT = "http://localhost:5000";
-
 const Container = styled.div`
     padding: 20px;
     display: flex;
@@ -81,13 +80,14 @@ function Room() {
   useEffect(() => { 
     const helperGetUserMedia = async ()=>{
      try{
-      const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoVisible, audio: isAudioVisible})
-  
+      const stream = await navigator.mediaDevices
+                    .getUserMedia({ video: isVideoVisible, audio: isAudioVisible})
+      
         if(!stream) console.log("ddddd")
         userVideo.current.srcObject = stream;
-         socketRef.current.emit("join room", {name:user.name, roomID:roomID});
+        socketRef.current.emit("join room", {name:user.name, roomID:roomID[0], email : user.email});
          
-         socketRef.current.on("all users", users => {
+        socketRef.current.on("all users", users => {
              const peers = [];
              users.forEach(item => {
                  const peer = createPeer(item.id, socketRef.current.id, stream);
@@ -123,9 +123,9 @@ function Room() {
     socketRef.current = io.connect("http://localhost:5000",
             {transports: ["websocket"],
             upgrade: false});
-        console.log("dmkfd");
-          helperGetUserMedia();
-    },[]);
+            console.log("dmkfd");
+            helperGetUserMedia();
+    },[userVideo]);
 
 
     if (!authStatus && !loadingStatus) {
@@ -212,7 +212,6 @@ const toggleVideo = ()=>{
   }
 }
 const toggleAudio = ()=>{
-
   userVideo.current.srcObject.getAudioTracks()[0].enabled = !isAudioVisible;
   setAudioVisible(!isAudioVisible);
 }
@@ -226,7 +225,7 @@ const toggleScreenShare = async ()=>{
     const stream = await navigator.mediaDevices.getDisplayMedia();
     userVideo.current.srcObject = stream;
   }
-  
+
   setScreenVisible(!isScreenShare);
 }
 
@@ -265,7 +264,7 @@ const disconnectCall = () => {
 
       <div className="btn-down" style={{ backgroundColor: "whitesmoke", color: "whitesmoke", textAlign: "center" }}>
 							<IconButton style={{ color: "#424242" }} onClick={()=>toggleVideo()}>
-						{ !isVideoVisible ? 	<VideocamIcon /> 
+						{ isVideoVisible ? 	<VideocamIcon /> 
                 : <VideocamOffIcon /> }
 							</IconButton>
 
@@ -274,7 +273,7 @@ const disconnectCall = () => {
 							</IconButton>
 
 							<IconButton style={{ color: "#424242" }} onClick ={()=>toggleAudio()} >
-					    {!isAudioVisible	?	 <MicIcon /> :
+					    {isAudioVisible	?	 <MicIcon /> :
                 <MicOffIcon /> }
 							</IconButton>
               

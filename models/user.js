@@ -1,6 +1,6 @@
+const { ObjectId } = require("mongodb");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const { ObjectId } = require("mongodb");
 
 const UserSchema = new Schema({
   name: {
@@ -11,15 +11,14 @@ const UserSchema = new Schema({
     type: String,
     required: true
   },
-  
   password: {
     type: String,
     required: true
   },
   group: [
     {
-      type:ObjectId,
-      ref: 'Room'
+      type:String,
+      required: true
     }
   ]
 })

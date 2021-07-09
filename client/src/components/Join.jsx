@@ -3,8 +3,26 @@ import { Link ,useHistory} from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import api from "api";
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import ListItemText from '@material-ui/core/ListItemText';
+import StarIcon from '@material-ui/icons/Star';
+import { makeStyles } from '@material-ui/core/styles';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    width: '100%',
+    maxWidth: 300,
+    height:70,
+    margin:10,
+    backgroundColor: theme.palette.background.paper,
+  },
+}));
+
 
 function Join() {
+  const classes = useStyles();
   let [id, setId] = useState();
   let [rooms,setRooms] = useState([]);
   const user = useSelector((state) => state.auth.user);
@@ -16,8 +34,7 @@ function Join() {
   }
   
   const goToRoom = (item)=>{
-        history.push(`/rooms/${item}`)
-  
+        history.push(`/chatRoom/${item}`)
   }
 
   useEffect(()=>{
@@ -56,10 +73,18 @@ function Join() {
             </Link>
           </form>
         </div>
-        helllllo
         <div>
+        <List component="nav" className={classes.root} aria-label="contacts">
+      
         { rooms.map(item => 
-           <li onClick={()=>goToRoom(item)}>{item}</li> )}
+          <ListItem button onClick={()=>goToRoom(item)}>
+        
+           <ListItemIcon>
+             <StarIcon />
+           </ListItemIcon>
+           <ListItemText primary={item}/>
+         </ListItem> )}
+    </List>
         </div>
       </div>
     </div>

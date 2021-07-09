@@ -14,22 +14,25 @@ function Message({ room, socket }) {
     if(!flag){
          setFlag(true);
          const response = await api.post("/findAllMsgs", { room} );
+         let arr=[];
          if(response?.data?.msgs != null){
 
             response.data.msgs.forEach(item=>{
               var obj = {name: item.Sender ,msg: item.Message}
-              setMessages([...messages,obj]);
+              arr.push(obj);
             })
          } 
-        }
-      if (socket) {
+         setMessages(arr);
+    }
+    if (socket) {
+        console.log("i am doing this");
         socket.on("message", (message) => {
           console.log("kash")
           setMessages([...messages, message]);
-        let element = document.getElementById("messages");
-        element.scrollTop = element.scrollHeight;
-      });
-     }
+          let element = document.getElementById("messages");
+          element.scrollTop = element.scrollHeight;
+        }); 
+    }
     return () => {
       socket?.off("message");
     };
@@ -96,7 +99,7 @@ function Message({ room, socket }) {
           className="h-16 w-full flex border-t py-2 items-center justify-between"
           onSubmit={handleSendMessage}
         >
-          <div className="h-full w-10/12 p-2 flex items-center">
+          <div className="h-full w-8/12 p-2 flex items-center">
             <input
               type="text"
               name="message"
@@ -107,7 +110,7 @@ function Message({ room, socket }) {
               className="h-full w-full text-xs no-scrollbar resize-none outline-none border-gray-400 border rounded-lg p-2"
             />
           </div>
-          <div className="h-full flex items-center w-2/12 mr-2 py-2">
+          <div className="h-full flex items-center w-4/12 mr-2 py-2">
             <button
               type="submit"
               className="focus:outline-none px-2 py-1 bg-blue-700 text-white rounded-lg"

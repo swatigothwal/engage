@@ -165,8 +165,11 @@ io.on('connection', (socket) => {
   var userForExitName ;
   socket.on("join room", (item) => {
 
-    const {name, roomID} = item;
+    const {name, roomID, email} = item;
     userForExitName = item.name;
+    console.log(roomID)
+    console.log(name)
+    console.log(email)
     if (liveUsers[roomID]) {
     
       const length = liveUsers[roomID].length;
@@ -174,6 +177,14 @@ io.on('connection', (socket) => {
         socket.emit("room full");
         return;
       }
+
+      console.log()
+
+    if(liveUsers[roomID].includes({name:name})){
+        liveUsers[roomID].remove({name:name});
+        console.log("duplicates");
+    }
+
       liveUsers[roomID].push({
         id: socket.id,
         name: name
@@ -184,23 +195,25 @@ io.on('connection', (socket) => {
         name: name
       }];
     }
-    
-   //..user.findone(email)
+    console.log(roomID)
+    userModal.findOne({ email : email})
+             .then((doc) => {
+                if (doc) {
+                  if(!doc.group.includes(roomID)){
+                    doc.group.push(roomID);
+                    doc.save('done');
+                  }
+                }
+             })
 
-   socketToRoom[socket.id] = roomID;
+    socketToRoom[socket.id] = roomID;
 
 
     const usersInThisRoom = liveUsers[roomID].filter(item => item.id !== socket.id);
     // Wellcome room
     socket.emit("all users", usersInThisRoom);
 
-    socket.emit("message", {
-      name: "Admin",
-      msg: "Continue Chat..."
-    });
-
-
-    socket.broadcast.to(socketToRoom[socket.id]).emit("message", {
+    socket.broadcast.to(socket.id).emit("message", {
       name: "Admin",
       msg: `${name} has joined to room`,
     });
@@ -230,25 +243,25 @@ io.on('connection', (socket) => {
       var temp;
       if(userForExitName=="") temp="Someone has left the room"
       else temp= `${userForExitName} has left the room` 
-      socket.to(roomID).broadcast.emit("message", {
+      socket.broadcast.to(socket.id).emit("message", {
         name: "Admin",
-         msg : temp
+        msg: `${userForExitName} has left to room`,
       });
     }
 
   });
-  socket.emit("message", { name: "Admin", msg: "Welcome to chat app" });
+  socket.emit("message", { name: "Admin", msg: "Continue Chat"});
 
   socket.on("sendMessage", ({
     name,
     msg,
     room
   }) => {
-    io.to(room[0]).emit("message", {
-      name,
-      msg
+    io.emit("message", {
+      name : name,
+      msg : msg
     });
-    console.log(room[0])
+    console.log(room)
     roomModal.findOne({ ID: room[0] })
             .then((doc) => {
                 if (doc) {

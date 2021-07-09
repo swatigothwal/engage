@@ -9,6 +9,7 @@ import { setToken, getToken } from "api/token";
 import { useEffect, useState } from "react";
 import { fetchUser } from "redux/slices/auth";
 import Loading from "components/Loading";
+import ChatRoom from './components/Chat';
 
 function App() {
   const loading = useSelector((state) => state.auth.loading);
@@ -34,6 +35,7 @@ function App() {
         <Route path="/rooms/:id" component={Room} />
         <Route path="/join" exact component={Join} />
         <Route path="/" exact component={Home} />
+        <Route path="/chatRoom/:id" exact component={ChatRoom} />
       </Switch>
     </div>
   );

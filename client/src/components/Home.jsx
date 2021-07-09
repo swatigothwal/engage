@@ -21,7 +21,7 @@ function Home() {
       <div className="flex w-1/2 h-full items-center justify-center">
         <div className="w-3/4">
           <div className="flex justify-center">
-            <Link to={`/join`} className="flex justify-end min-w-3/4 mr-6">
+            <Link to={`/join`} className="flex justify-start min-w-3/4 mr-6">
               <button className="justify-center flex min-w-1/2 items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full focus:outline-none">
                 <svg width="2em" height="2em" viewBox="0 0 24 24">
                   <path
@@ -32,9 +32,25 @@ function Home() {
                 <div>Join meeting</div>
               </button>
             </Link>
-
+            
             <Link
               to={`/rooms/${id}`}
+              className="flex justify-end min-w-3/4"
+            >
+              <button className="justify-center focus:outline-none min-w-1/2 flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
+                <svg width="2em" height="2em" viewBox="0 0 24 24">
+                  <path
+                    d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                    fill="currentColor"
+                  ></path>
+                </svg>
+                <div>
+                  <div>Create a meeting Room</div>
+                </div>
+              </button>
+            </Link>
+            {/* <Link
+              to={`/chatRoom/${id}`}
               className="flex justify-start min-w-3/4 ml-6"
             >
               <button className="justify-center focus:outline-none min-w-1/2 flex items-center bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
@@ -45,12 +61,11 @@ function Home() {
                   ></path>
                 </svg>
                 <div>
-                  <div>Create a meeting</div>
+                  <div>Create A Chat Room</div>
                 </div>
               </button>
-            </Link>
+            </Link>         */}
           </div>
-
           <div className="flex justify-center mt-6">
             <div className="text-white text-xl text hover:underline cursor-pointer">
               <button

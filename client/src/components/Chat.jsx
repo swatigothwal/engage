@@ -15,8 +15,8 @@ import Typography from '@material-ui/core/Typography';
 import MenuIcon from '@material-ui/icons/Menu';
 import VideocamOutlined from '@material-ui/icons/VideocamOutlined';
 
-
-const END_POINT = "http://localhost:5000";
+const END_POINT = process.env.REACT_APP_HOST_URL;
+//const END_POINT = "http://localhost:5000";
 const Container = styled.div`
     padding: 20px;
     display: flex;
@@ -112,7 +112,7 @@ function Room() {
         }
      }
 
-    socketRef.current = io.connect("http://localhost:5000",
+    socketRef.current = io.connect(END_POINT,
             {transports: ["websocket"],
             upgrade: false});
             console.log("dmkfd");

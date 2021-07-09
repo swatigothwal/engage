@@ -23,7 +23,8 @@ import FullscreenExitIcon from '@material-ui/icons/FullscreenExit';
 import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 import 'bootstrap/dist/css/bootstrap.css'
 
-const END_POINT = "http://localhost:5000";
+const END_POINT = process.env.REACT_APP_HOST_URL;
+//const END_POINT = "http://localhost:5000";
 const Container = styled.div`
     padding: 20px;
     display: flex;
@@ -120,7 +121,7 @@ function Room() {
         }
      }
 
-    socketRef.current = io.connect("http://localhost:5000",
+    socketRef.current = io.connect(END_POINT,
             {transports: ["websocket"],
             upgrade: false});
             console.log("dmkfd");
